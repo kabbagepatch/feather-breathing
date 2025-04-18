@@ -75,70 +75,91 @@
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const feather = new Image();
-    feather.src = 'feather.png';
-
-    let startTime = performance.now();
-
-    let featherX = 0;
-    let featherY = 100;
-    let prevVelocityX = 0;
-    let velocityX = 0;
-    let velocityY = 0;
-    const gravity = 0.01;
-    const lift = -0.01;
-    let exhaling = false;
 
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
+    const startTime = performance.now();
+
+    const border = new Image();
+    border.src = 'border.png';
+
+    const feather = new Image();
+    feather.src = 'feather.png';
+
+    let borderY = 50;
+    let borderVelocityY = 0;
+    let borderUp = false;
+    let featherX = 0;
+    let featherY = 100;
+    let featherVelocityX = 0;
+    let featherVelocityY = 0;
+    const gravity = 0.01;
+    const lift = -0.01;
+    let exhaling = false;
+      
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(border, canvas.width / 2 - 210, borderY, 450, 350);
       ctx.drawImage(feather, canvas.width / 2 - 150 + featherX, featherY, 270, 270);
     }
 
-    function update(time) {
-      featherX += velocityX;
-      featherY += velocityY;
+    function updateBorder() {
+      borderVelocityY += (borderUp ? lift : gravity) * 0.9;
+      borderY += borderVelocityY;
+
+      const minY = 50;
+      const maxY = canvas.height - 350;
+      if (borderY > maxY) {
+        borderUp = true;
+        borderY = maxY;
+        borderVelocityY = -0.05;
+      } else if (borderY < minY) {
+        borderUp = false;
+        borderY = minY;
+        borderVelocityY = 0.05;
+      }
+      requestAnimationFrame(updateBorder);
+    }
+
+    function updateFeather(time) {
+      featherX += featherVelocityX;
+      featherY += featherVelocityY;
 
       if (time) {
         const elapsed = time - startTime;
-        velocityX = Math.sin(elapsed * 0.002) * 1.2;
+        featherVelocityX = Math.sin(elapsed * 0.002) * 1.2;
       }
+      featherVelocityY += exhaling ? lift : gravity;
 
-      if (exhaling) {
-        velocityY += lift;
-      } else {
-        velocityY += gravity;
-      }
 
       const minY = -50;
       const maxY = canvas.height - 270;
       if (featherY > maxY) {
-        velocityY = 0;
+        featherVelocityY = 0;
         featherY = maxY;
       } else if (featherY < minY) {
-        velocityY = 0;
+        featherVelocityY = 0;
         featherY = minY;
       }
 
       draw();
-      requestAnimationFrame(update);
+      requestAnimationFrame(updateFeather);
     }
 
     function inhale() {
       exhaling = false;
-      if (velocityY < -0.05) {
-        velocityY = -0.05;
+      if (featherVelocityY < -0.05) {
+        featherVelocityY = -0.05;
       }
     }
 
     function exhale() {
       exhaling = true;
-      if (velocityY > 0.05) {
-        velocityY = 0.05;
+      if (featherVelocityY > 0.05) {
+        featherVelocityY = 0.05;
       }
     }
 
@@ -152,7 +173,8 @@
 
     feather.onload = () => {
       resize();
-      update();
+      updateFeather();
+      updateBorder();
     };
 
     window.addEventListener('resize', resize);
