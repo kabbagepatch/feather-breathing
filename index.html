@@ -76,10 +76,15 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const feather = new Image();
-    feather.src = 'feather_512.png';
+    feather.src = 'feather.png';
 
+    let startTime = performance.now();
+
+    let featherX = 0;
     let featherY = 100;
-    let velocity = 0;
+    let prevVelocityX = 0;
+    let velocityX = 0;
+    let velocityY = 0;
     const gravity = 0.01;
     const lift = -0.01;
     let exhaling = false;
@@ -91,44 +96,59 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(feather, canvas.width / 2 - 160, featherY, 300, 300);
+      ctx.drawImage(feather, canvas.width / 2 - 150 + featherX, featherY, 270, 270);
     }
 
-    function update() {
-      if (exhaling) {
-        if (velocity > 0.05) {
-          velocity = 0.05;
-        }
-        velocity += lift;
-      } else {
-        if (velocity < -0.05) {
-          velocity = -0.05;
-        }
-        velocity += gravity;
-      }
-      featherY += velocity;
+    function update(time) {
+      featherX += velocityX;
+      featherY += velocityY;
 
-      const minY = 0;
-      const maxY = canvas.height - 250;
+      if (time) {
+        const elapsed = time - startTime;
+        velocityX = Math.sin(elapsed * 0.002) * 1.2;
+      }
+
+      if (exhaling) {
+        velocityY += lift;
+      } else {
+        velocityY += gravity;
+      }
+
+      const minY = -50;
+      const maxY = canvas.height - 270;
       if (featherY > maxY) {
+        velocityY = 0;
         featherY = maxY;
-        velocity = 0;
-      } else if (featherY <= minY) {
+      } else if (featherY < minY) {
+        velocityY = 0;
         featherY = minY;
-        velocity = 0;
       }
 
       draw();
       requestAnimationFrame(update);
     }
 
+    function inhale() {
+      exhaling = false;
+      if (velocityY < -0.05) {
+        velocityY = -0.05;
+      }
+    }
+
+    function exhale() {
+      exhaling = true;
+      if (velocityY > 0.05) {
+        velocityY = 0.05;
+      }
+    }
+
     const breatheBtn = document.getElementById('breatheBtn');
-    breatheBtn.addEventListener('mousedown', () => { exhaling = true; });
-    breatheBtn.addEventListener('mouseup', () => { exhaling = false; });
-    breatheBtn.addEventListener('mouseleave', () => { exhaling = false; });
-    breatheBtn.addEventListener('touchstart', (e) => { e.preventDefault(); exhaling = true; });
-    breatheBtn.addEventListener('touchend', () => { exhaling = false; });
-    breatheBtn.addEventListener('touchcancel', () => { exhaling = false; });
+    breatheBtn.addEventListener('mousedown', () => { exhale() });
+    breatheBtn.addEventListener('mouseup', () => { inhale() });
+    breatheBtn.addEventListener('mouseleave', () => { inhale() });
+    breatheBtn.addEventListener('touchstart', (e) => { e.preventDefault(); exhale() });
+    breatheBtn.addEventListener('touchend', () => { inhale() });
+    breatheBtn.addEventListener('touchcancel', () => { inhale() });
 
     feather.onload = () => {
       resize();

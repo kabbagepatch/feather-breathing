@@ -1,5 +1,5 @@
 const CACHE_NAME = 'feather-breathing-v1';
-const urlsToCache = ['/', '/index.html', '/feather_512.png', '/feather_192.png'];
+const urlsToCache = ['/', '/index.html', '/feather.png', '/feather_512.png', '/feather_192.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
