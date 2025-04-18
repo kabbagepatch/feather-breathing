@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="hsl(199, 64%, 73%)" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feather Breathing</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom,
+        hsl(230, 53%, 9%) 0%,
+        hsl(232, 42%, 14%) 40%,
+        hsl(229, 26%, 21%) 70%,
+        hsl(18, 78%, 22%) 100%
+      );
+      overflow: hidden;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 70vh;
+      width: 100vw;
+      background-image: 
+        radial-gradient(white 1px, transparent 1px),
+        radial-gradient(white 1px, transparent 1px);
+      background-size: 100px 100px, 150px 150px;
+      background-position: 0 0, 50px 50px;
+      z-index: 0;
+      opacity: 0.1;
+      pointer-events: none;
+    }
+
+    #canvas, button {
+      position: relative;
+      z-index: 1;
+    }
+
+    #canvas {
+      height: calc(100vh - 150px);
+      width: 100%;
+      display: block;
+    }
+
+    button {
+      margin: 1rem auto;
+      padding: 3rem;
+      font-size: 1.5rem;
+      border: none;
+      border-radius: 50px;
+      background: hsl(36, 83%, 55%);
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: hsl(36, 100%, 59%);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <button id="breatheBtn"></button>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const feather = new Image();
+    feather.src = 'feather_512.png';
+
+    let featherY = 100;
+    let velocity = 0;
+    const gravity = 0.01;
+    const lift = -0.01;
+    let exhaling = false;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(feather, canvas.width / 2 - 160, featherY, 300, 300);
+    }
+
+    function update() {
+      if (exhaling) {
+        if (velocity > 0.05) {
+          velocity = 0.05;
+        }
+        velocity += lift;
+      } else {
+        if (velocity < -0.05) {
+          velocity = -0.05;
+        }
+        velocity += gravity;
+      }
+      featherY += velocity;
+
+      const minY = 0;
+      const maxY = canvas.height - 250;
+      if (featherY > maxY) {
+        featherY = maxY;
+        velocity = 0;
+      } else if (featherY <= minY) {
+        featherY = minY;
+        velocity = 0;
+      }
+
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    const breatheBtn = document.getElementById('breatheBtn');
+    breatheBtn.addEventListener('mousedown', () => { exhaling = true; });
+    breatheBtn.addEventListener('mouseup', () => { exhaling = false; });
+    breatheBtn.addEventListener('mouseleave', () => { exhaling = false; });
+    breatheBtn.addEventListener('touchstart', (e) => { e.preventDefault(); exhaling = true; });
+    breatheBtn.addEventListener('touchend', () => { exhaling = false; });
+    breatheBtn.addEventListener('touchcancel', () => { exhaling = false; });
+
+    feather.onload = () => {
+      resize();
+      update();
+    };
+
+    window.addEventListener('resize', resize);
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker Registered'));
+    }
+  </script>
+</body>
+</html>
